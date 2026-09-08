@@ -100,3 +100,46 @@ h3{margin:0}
 
 /* Schedule Service page */
 .schedule-page{padding-top:64px}.schedule-heading{max-width:780px;margin:0 auto 34px;text-align:center}.schedule-heading h1{font-size:clamp(38px,5vw,60px);margin:14px 0}.schedule-heading .lead{margin:0 auto}.schedule-layout{align-items:start}.schedule-form-card{padding:34px}.service-request-form{margin-top:0}.service-request-form label{display:grid;gap:8px;font-size:14px;font-weight:800;color:var(--text)}.service-request-form label strong{color:var(--orange)}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.form-span-2{grid-column:1/-1}.form-section-title{display:flex;align-items:flex-start;gap:14px;margin-bottom:20px}.form-section-title>span{width:36px;height:36px;flex:0 0 36px;border-radius:50%;display:grid;place-items:center;background:rgba(22,93,255,.1);color:var(--blue);font-weight:900}.form-section-title h2{font-size:23px;letter-spacing:-.02em;margin:0 0 4px}.form-section-title p{margin:0;color:var(--muted);line-height:1.5}.form-divider{height:1px;background:var(--line);margin:30px 0}.form-submit{width:100%;margin-top:8px;font-size:16px}.form-submit:disabled{opacity:.65;cursor:not-allowed}.form-privacy{font-size:12px;line-height:1.6;color:var(--muted);text-align:center;margin:2px 0 0}.form-status{display:none;padding:14px 16px;border-radius:12px;font-weight:800;line-height:1.5}.form-status-success{display:block;background:#ecfdf3;color:#067647;border:1px solid #abefc6}.form-status-error{display:block;background:#fef3f2;color:#b42318;border:1px solid #fecdca}.form-honeypot{position:absolute!important;left:-9999px!important;opacity:0!important;height:1px!important;width:1px!important}.schedule-contact-card{position:sticky;top:105px}.schedule-contact-card p{color:#cbd5e1;line-height:1.7}.schedule-call-button{width:100%;margin:18px 0 26px;background:#fff;color:var(--navy)}.contact-detail{display:grid;gap:5px;padding:18px 0;border-top:1px solid rgba(255,255,255,.12)}.contact-detail strong{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:#bfdbfe}.contact-detail a,.contact-detail span{color:#fff;overflow-wrap:anywhere}@media(max-width:900px){.schedule-contact-card{position:static}}@media(max-width:620px){.schedule-page{padding-top:44px}.schedule-form-card{padding:22px}.form-grid{grid-template-columns:1fr}.form-span-2{grid-column:auto}.form-section-title h2{font-size:20px}}
+
+/* ---- brand logo + business-card phone ---- */
+@font-face{font-family:"R3M Phone";src:url(/assets/phone.woff) format("woff");font-weight:700;font-style:normal;font-display:swap}
+.brand img{height:54px;width:auto;display:block}
+.header-inner{gap:14px}
+.ph{font-family:"R3M Phone","DejaVu Serif",Georgia,"Times New Roman",serif;font-weight:700;white-space:nowrap;letter-spacing:.01em}
+.ph1{color:#0a5c9b}.ph2{color:#e46820}
+.header .phone-card{display:inline-flex;align-items:center;font-size:24px;line-height:1;text-decoration:none;padding:10px 6px;border:0;background:transparent}
+.footer .phone-card,.schedule-contact-card .phone-card{display:inline-block;background:#fff;padding:8px 14px;border-radius:12px;font-size:20px;line-height:1.2;margin:4px 0}
+.mobile-bar a.phone-card{font-size:17px}
+.mobile-bar a.phone-card .ph{font-size:18px}
+.contact-detail a.phone-card{color:#0a5c9b}
+.btn-phone.schedule-call-button{background:#fff}
+@media(max-width:620px){.brand img{height:44px}.actions .phone-card{display:none}}
+
+/* ---- brands page ---- */
+.brand-card{display:flex;flex-direction:column;gap:8px;text-align:center}
+.brand-logo{height:78px;display:grid;place-items:center;margin-bottom:6px;padding:8px;background:#fff;border-radius:12px;border:1px solid var(--line)}
+.brand-logo img{max-height:56px;max-width:82%;width:auto;height:auto;object-fit:contain}
+.brand-logo-text span{font-weight:900;font-size:22px;letter-spacing:-.01em;color:var(--navy)}
+.brand-logo-link{display:block}
+.brand-card h3{margin:0}
+.brand-card p{margin:0}
+.brand-card .brand-link{margin-top:auto;font-weight:900;color:var(--blue)}
+.brand-other{background:#eef4ff;border-color:#c7d7ff}
+
+/* ---- reviews ---- */
+.stars{color:#f5a623;letter-spacing:2px;font-size:15px}
+.stars.big{font-size:22px}
+.review-card{display:flex;flex-direction:column;gap:12px}
+.review-top{display:flex;justify-content:space-between;align-items:center}
+.review-google{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.review-text{margin:0;line-height:1.65;color:var(--text)}
+.review-meta{margin-top:auto;display:flex;flex-direction:column;gap:2px;font-size:14px}
+.review-meta strong{color:var(--navy)}
+.review-meta span{color:var(--muted)}
+.rating-badge{display:inline-flex;align-items:center;gap:16px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px 20px;margin:18px 0 8px}
+.rating-num{font-size:44px;font-weight:900;color:var(--navy);line-height:1}
+.rating-sub{font-weight:700;color:var(--muted);font-size:14px;margin-top:4px}
+.reviews-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px}
+.section-dark .rating-badge{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18)}
+.section-dark .rating-num{color:#fff}
+.section-dark .rating-sub{color:#cbd5e1}
