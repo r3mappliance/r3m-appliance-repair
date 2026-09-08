@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Schedule Appliance Repair | R3M Appliance Repair</title>
+  <meta name="description" content="Request residential appliance repair service from R3M Appliance Repair. Submit your appliance details, service address, and preferred appointment time online.">
+  <link rel="canonical" href="https://www.r3mappliancerepair.com/schedule-service">
+  <link rel="stylesheet" href="/assets/styles.css">
+</head>
+<body>
+<header class="header"><div class="container header-inner">
+  <a class="brand" href="/"><span class="logo">R3M</span><span>R3M Appliance Repair<small>Local • Reliable • Professional</small></span></a>
+  <nav class="nav" aria-label="Main navigation"><a href="/">Home</a><a href="/services">Services</a><a href="/brands">Brands</a><a href="/service-areas">Service Areas</a><a href="/about">About</a><a href="/contact">Contact</a></nav>
+  <div class="actions"><a class="btn btn-outline" href="tel:+14694464242">(469) 446-4242</a><a class="btn btn-primary" href="/schedule-service">Book Service</a></div>
+</div></header>
+
+<main class="soft section schedule-page"><div class="container">
+  <div class="schedule-heading"><div class="eyebrow">Schedule service</div><h1>Request Appliance Repair</h1><p class="lead">Tell us about the appliance and the problem. Your request will be sent directly to R3M Appliance Repair.</p></div>
+  <div class="two-col schedule-layout">
+    <section class="card schedule-form-card">
+      <form id="service-request-form" class="form form-light service-request-form" action="https://formspree.io/f/mrenbjrv" method="POST">
+        <input type="hidden" name="_subject" value="New Service Request from R3M Website">
+        <input type="text" name="_gotcha" class="form-honeypot" tabindex="-1" autocomplete="off">
+
+        <div class="form-section-title"><span>1</span><div><h2>Customer information</h2><p>How can we contact you?</p></div></div>
+        <div class="form-grid">
+          <label>Full name <strong>*</strong><input type="text" name="name" placeholder="Full name" autocomplete="name" required></label>
+          <label>Phone number <strong>*</strong><input type="tel" name="phone" placeholder="(555) 555-5555" autocomplete="tel" required></label>
+          <label class="form-span-2">Email address<input type="email" name="email" placeholder="you@example.com" autocomplete="email"></label>
+        </div>
+
+        <div class="form-divider"></div>
+        <div class="form-section-title"><span>2</span><div><h2>Service address</h2><p>Enter the full address where the appliance is located.</p></div></div>
+        <div class="form-grid">
+          <label class="form-span-2">Street address <strong>*</strong><input type="text" name="street_address" placeholder="Street address" autocomplete="street-address" required></label>
+          <label>City <strong>*</strong><input type="text" name="city" placeholder="City" autocomplete="address-level2" required></label>
+          <label>State <strong>*</strong><input type="text" name="state" value="TX" maxlength="2" autocomplete="address-level1" required></label>
+          <label>ZIP code <strong>*</strong><input type="text" name="zip_code" placeholder="ZIP code" inputmode="numeric" autocomplete="postal-code" required></label>
+        </div>
+
+        <div class="form-divider"></div>
+        <div class="form-section-title"><span>3</span><div><h2>Appliance details</h2><p>Give us enough information to prepare for the service call.</p></div></div>
+        <div class="form-grid">
+          <label>Appliance type <strong>*</strong><select name="appliance" required><option value="">Select appliance</option><option>Refrigerator</option><option>Freezer</option><option>Ice Maker</option><option>Washer</option><option>Dryer</option><option>Dishwasher</option><option>Oven / Range</option><option>Cooktop</option><option>Microwave</option><option>Garbage Disposal</option><option>Wine Cooler</option><option>Vent Hood</option><option>Other</option></select></label>
+          <label>Brand<input type="text" name="brand" placeholder="Example: Samsung"></label>
+          <label class="form-span-2">Model number<input type="text" name="model_number" placeholder="Optional"></label>
+          <label class="form-span-2">Describe the problem <strong>*</strong><textarea name="issue" rows="6" placeholder="Describe what the appliance is doing, any error code, noises, leaks, or other symptoms." required></textarea></label>
+        </div>
+
+        <div class="form-divider"></div>
+        <div class="form-section-title"><span>4</span><div><h2>Preferred appointment</h2><p>We will contact you to confirm availability.</p></div></div>
+        <div class="form-grid">
+          <label>Preferred date<input type="date" name="preferred_date"></label>
+          <label>Preferred time<select name="preferred_time"><option value="">Select a time</option><option>Morning</option><option>Afternoon</option><option>Evening</option><option>Any time</option></select></label>
+        </div>
+
+        <button type="submit" class="btn btn-primary form-submit">Submit Service Request</button>
+        <p class="form-privacy">By submitting this form, you agree that R3M Appliance Repair may contact you about your service request.</p>
+        <div id="form-status" class="form-status" role="status" aria-live="polite"></div>
+      </form>
+    </section>
+
+    <aside class="booking-card schedule-contact-card">
+      <div class="eyebrow" style="color:#bfdbfe">Prefer to call?</div><h3>Speak directly with R3M.</h3><p>Call us to discuss the appliance problem and available appointment times.</p>
+      <a class="btn btn-outline schedule-call-button" href="tel:+14694464242">(469) 446-4242</a>
+      <div class="contact-detail"><strong>Email</strong><a href="mailto:R3mappliances@gmail.com">R3mappliances@gmail.com</a></div>
+      <div class="contact-detail"><strong>Service area</strong><span>122 Brockway Dr, Rockwall, TX 75032</span></div>
+    </aside>
+  </div>
+</div></main>
+
+<footer class="footer"><div class="container"><div class="footer-grid"><div><h3>R3M Appliance Repair</h3><p>Family-owned residential appliance repair based in Rockwall, TX. Serving Rockwall, Forney, Fate, Royse City, Rowlett, Sunnyvale, Heath and McLendon-Chisholm.</p></div><div><h3>Quick Links</h3><p><a href="/services">Services</a></p><p><a href="/brands">Brands</a></p><p><a href="/service-areas">Service Areas</a></p><p><a href="/schedule-service">Schedule Service</a></p></div><div><h3>Contact</h3><p><a href="tel:+14694464242">(469) 446-4242</a></p><p><a href="mailto:R3mappliances@gmail.com">R3mappliances@gmail.com</a></p><p>122 Brockway Dr, Rockwall, TX 75032</p></div></div><div class="footer-bottom">© 2026 R3M Appliance Repair. All rights reserved.</div></div></footer>
+<div class="mobile-bar"><a href="tel:+14694464242">Call Now</a><a href="/schedule-service">Book Service</a></div>
+
+
+<script src="/assets/script.js" defer></script></body></html>
