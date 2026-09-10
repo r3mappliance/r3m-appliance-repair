@@ -1,0 +1,50 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>R3M Go</title><meta name="robots" content="noindex,nofollow"><link rel="manifest" href="/assets/go.webmanifest"><link rel="apple-touch-icon" href="/assets/icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="R3M Go"><meta name="theme-color" content="#0b1f3a"><style>
+:root{--navy:#0b1f3a;--blue:#0a5c9b;--blue2:#165dff;--orange:#e46820;--ice:#f4f8fc;--text:#14213d;--muted:#667085;--line:#e5e7eb}
+*{box-sizing:border-box}html,body{margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Arial,sans-serif;background:var(--ice);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+.wrap{max-width:520px;margin:0 auto;padding:22px 18px 40px}
+.logo{display:block;width:210px;max-width:70%;margin:6px auto 14px}
+.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px 20px;box-shadow:0 10px 30px rgba(11,31,58,.06)}
+h1{font-size:26px;line-height:1.2;margin:0 0 8px;letter-spacing:-.01em}
+p{line-height:1.55;margin:0 0 14px;color:var(--muted)}
+.btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:16px 18px;border-radius:14px;font-weight:800;font-size:17px;text-decoration:none;border:2px solid var(--line);background:#fff;color:var(--navy);margin:10px 0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.btn.primary{background:var(--orange);border-color:var(--orange);color:#fff}
+.btn.blue{background:var(--blue2);border-color:var(--blue2);color:#fff}
+.btn.green{background:#25D366;border-color:#25D366;color:#fff}
+.btn:active{transform:scale(.99)}
+.ph{font-family:"R3M Phone","DejaVu Serif",Georgia,serif;font-weight:700;white-space:nowrap}
+.ph1{color:#0a5c9b}.ph2{color:#e46820}
+@font-face{font-family:"R3M Phone";src:url(/assets/phone.woff) format("woff");font-weight:700;font-display:swap}
+.foot{text-align:center;margin-top:22px;font-size:14px;color:var(--muted)}
+.foot .ph{font-size:22px}
+
+label{display:block;font-weight:800;font-size:14px;margin:12px 0 6px;color:var(--navy)}
+input,textarea{width:100%;font:inherit;font-size:18px;padding:14px;border:2px solid var(--line);border-radius:12px;background:#fff;color:var(--text)}
+textarea{min-height:120px;line-height:1.45;font-size:15px}
+input:focus,textarea:focus{outline:none;border-color:var(--blue2)}
+.row{display:flex;gap:10px}.row .btn{flex:1}
+.hint{font-size:13px;color:var(--muted);margin-top:6px}
+.log{margin-top:18px} .log h3{font-size:14px;margin:0 0 8px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.log div{display:flex;justify-content:space-between;padding:8px 0;border-top:1px solid var(--line);font-size:14px}
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:var(--navy);color:#fff;padding:12px 18px;border-radius:12px;font-weight:700;display:none}
+small.tag{display:inline-block;background:#eef4ff;color:var(--blue);border-radius:999px;padding:4px 10px;font-weight:800;font-size:12px;margin-bottom:8px}
+</style><meta property="og:type" content="website"><meta property="og:site_name" content="R3M Appliance Repair"><meta property="og:title" content="R3M Go"><meta property="og:image" content="https://www.r3mappliancerepair.com/assets/og-logo.png"><meta name="twitter:card" content="summary_large_image"></head><body><div class="wrap">
+<img class="logo" src="/assets/logo.png" alt="R3M">
+<div class="card">
+<small class="tag">Review request</small>
+<h1>Send the review link</h1>
+<p>Type the customer's first name and number, then tap how you want to send it. The message opens in your own app so you can tweak it before sending.</p>
+<label for="name">Customer first name</label><input id="name" autocomplete="off" placeholder="Sarah">
+<label for="phone">Mobile number</label><input id="phone" type="tel" inputmode="tel" autocomplete="off" placeholder="(469) 555-1234">
+<label for="msg">Message <span style="font-weight:600;color:var(--muted)">(rotates automatically, edit if you like)</span></label>
+<textarea id="msg"></textarea>
+<div class="hint">Link inside: <b>www.r3mappliancerepair.com/review</b> — it takes them to Google (and any platform we add later) without changing this message.</div>
+<a class="btn blue" id="sms">Text it (SMS)</a>
+<div class="row"><a class="btn green" id="wa">WhatsApp</a><a class="btn" id="mail">Email</a></div>
+<div class="row"><button class="btn" id="copy">Copy message</button><button class="btn" id="shuffle">New wording</button></div>
+</div>
+<div class="card log" id="logcard" style="margin-top:14px"><h3>Sent from this phone</h3><div id="log"></div></div>
+<div class="foot">Tip: on iPhone tap Share → <b>Add to Home Screen</b> so this is one tap away.</div>
+</div>
+<div class="toast" id="toast"></div>
+<script src="/assets/go.js" defer></script><script src="/assets/script.js" defer></script></body></html>

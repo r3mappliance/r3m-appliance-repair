@@ -26,6 +26,11 @@
       "source": "/index.html",
       "destination": "/",
       "permanent": true
+    },
+    {
+      "source": "/r",
+      "destination": "/review",
+      "permanent": false
     }
   ],
   "headers": [
