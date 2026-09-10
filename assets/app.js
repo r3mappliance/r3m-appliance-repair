@@ -241,7 +241,9 @@ function viewDay(ds){
 var LEAF='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/';
 function loadLeaflet(){if(window.L)return Promise.resolve();return new Promise(function(res,rej){var l=document.createElement('link');l.rel='stylesheet';l.href=LEAF+'leaflet.min.css';var cssDone=false,jsDone=false;function chk(){if(cssDone&&jsDone)res();}l.onload=l.onerror=function(){cssDone=true;chk();};document.head.appendChild(l);var sc=document.createElement('script');sc.src=LEAF+'leaflet.min.js';sc.onload=function(){jsDone=true;chk();};sc.onerror=rej;document.head.appendChild(sc);setTimeout(function(){cssDone=true;chk();},3000);});}
 function addrStr(c){return [c.address,c.city,'TX'].filter(Boolean).join(', ');}
-function geocode(q){return fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=us&q='+encodeURIComponent(q),{headers:{'Accept':'application/json'}}).then(function(r){return r.json();}).then(function(a){return a&&a[0]?{lat:+a[0].lat,lng:+a[0].lon}:null;});}
+function geocode(q){return fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=us&q='+encodeURIComponent(q),{headers:{'Accept':'application/json'}}).then(function(r){return r.json();}).then(function(a){return a&&a[0]?{lat:+a[0].lat,lng:+a[0].lon}:null;}).catch(function(){return null;})
+  .then(function(g){if(g)return g; /* fallback: Photon handles abbreviations like "CD Boren Pkwy" better */
+    return fetch('https://photon.komoot.io/api/?q='+encodeURIComponent(q)+'&limit=1&lang=en&lat='+CFG.home.lat+'&lon='+CFG.home.lng+'&bbox=-97.8,32.3,-95.7,33.6').then(function(r){return r.json();}).then(function(d){var f=d.features&&d.features[0];return f&&f.properties.housenumber?{lat:f.geometry.coordinates[1],lng:f.geometry.coordinates[0]}:null;}).catch(function(){return null;});});}
 function sleep(ms){return new Promise(function(r){setTimeout(r,ms);});}
 function locateCustomers(cs){ /* geocode any customer with an address but no cached position; 1 request/second (Nominatim policy) */
   var todo=cs.filter(function(c){return c.address&&(!c.geo||c.geoFor!==addrStr(c));});
