@@ -83,3 +83,6 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue2)}
 .cal-sum{display:flex;justify-content:space-between;margin:12px 4px 0;font-size:14px;color:var(--muted)}
 .cal-sum b{color:var(--navy)}
 .tabs a{font-size:10px}
+.win-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px}
+.win-row .btn{width:auto;padding:8px 12px}
+.job .when small{white-space:nowrap}
