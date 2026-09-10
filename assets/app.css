@@ -95,3 +95,13 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue2)}
 .stop-n.nogeo{background:#cbd5e1!important}
 .leaflet-popup-content{font:inherit;font-size:14px;line-height:1.5}
 .leaflet-popup-content a{color:var(--blue2);font-weight:800}
+.sug-wrap{position:relative}
+.sug{position:relative;z-index:5}
+.sug:empty{display:none}
+.sug{background:#fff;border:2px solid var(--line);border-top:0;border-radius:0 0 12px 12px;margin-top:-6px;padding-top:6px;box-shadow:0 10px 24px rgba(11,31,58,.12)}
+.sug-i{padding:10px 12px;border-top:1px solid var(--line);cursor:pointer}
+.sug-i b{display:block;font-size:15px;color:var(--navy)}
+.sug-i span{font-size:13px;color:var(--muted)}
+.sug-i:active{background:var(--ice)}
+.sug-src{font-size:11px;color:var(--muted);padding:6px 12px 8px;text-align:right}
+.nav-btn{flex:0 0 auto;width:auto;padding:8px 12px;font-size:13px;margin:0;align-self:center}
