@@ -36,5 +36,7 @@
   document.addEventListener('DOMContentLoaded',function(){
     var forms=document.querySelectorAll('form[data-demo-form], form#service-request-form');
     for(var i=0;i<forms.length;i++) wire(forms[i]);
+    var rv=document.querySelectorAll('[data-platform]');
+    for(var j=0;j<rv.length;j++) rv[j].addEventListener('click',function(){ if(window.gtag) gtag('event','review_click',{platform:this.getAttribute('data-platform')}); });
   });
 })();
