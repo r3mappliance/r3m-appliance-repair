@@ -1,7 +1,7 @@
 (function(){
 var T=["Hi {name}, this is Ramez with R3M Appliance Repair. Thanks for having me out today. If you have 30 seconds, a quick review helps my small business more than you know: {link} Thank you!", "Hi {name}, Ramez here from R3M Appliance Repair. Glad I could get you taken care of today. If you're happy with the repair, would you mind leaving a quick review? {link} It really helps. Thanks!", "Hi {name}, thank you for choosing R3M Appliance Repair today. One small favor: a short Google review goes a long way for a one-man shop. {link} Appreciate you!", "Hi {name}, it's Ramez (R3M Appliance Repair). Thanks again for today. If everything is running right, a quick review here would mean a lot: {link} Call or text me anytime if you need anything."], LINK="r3mappliancerepair.com/review", i=Math.floor(Math.random()*T.length);
 var name=document.getElementById('name'),phone=document.getElementById('phone'),msg=document.getElementById('msg'),toast=document.getElementById('toast');
-function first(){return (name.value.trim().split(/\s+/)[0]||'there').replace(/^./,function(c){return c.toUpperCase();});}
+function first(){var n=name.value.trim().split(/\s+/)[0];return n?n.replace(/^./,function(c){return c.toUpperCase();}):'there';}
 function build(){msg.value=T[i].replace('{name}',first()).replace('{link}',LINK);}
 function digits(){var d=phone.value.replace(/\D/g,'');if(d.length===10)d='1'+d;return d;}
 function say(t){toast.textContent=t;toast.style.display='block';setTimeout(function(){toast.style.display='none';},1800);}
