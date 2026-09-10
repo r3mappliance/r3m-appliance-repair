@@ -20,8 +20,11 @@ function all(name){return new Promise(function(res,rej){var r=DB.transaction(nam
 function get(name,id){return new Promise(function(res,rej){var r=DB.transaction(name).objectStore(name).get(id);r.onsuccess=function(){res(r.result);};r.onerror=function(){rej(r.error);};});}
 function put(name,obj){return tx(name,'readwrite',function(s){s.put(obj);});}
 function del(name,id){return tx(name,'readwrite',function(s){s.delete(id);});}
-function nextWO(){return get('meta','wo_seq').then(function(m){var n=(m&&m.v)||1000;n+=1;return put('meta',{k:'wo_seq',v:n}).then(function(){return 'WO-'+n;});});}
-function migrate(){return all('jobs').then(function(js){var missing=js.filter(function(j){return !j.wo;}).sort(function(a,b){return (a.created||0)-(b.created||0);});return missing.reduce(function(p,j){return p.then(function(){return nextWO().then(function(w){j.wo=w;return put('jobs',j);});});},Promise.resolve());});}
+/* Work order numbers: random 6 digits (not sequential, never repeated). Uniqueness is checked against every job on the device
+   plus a 'wo_used' list in meta, so a deleted job's number is never handed out again. */
+function rand6(){var a=new Uint32Array(1);crypto.getRandomValues(a);return String(100000+(a[0]%900000));}
+function nextWO(){return Promise.all([all('jobs'),get('meta','wo_used')]).then(function(r){var used={};r[0].forEach(function(j){if(j.wo)used[j.wo]=1;});((r[1]&&r[1].v)||[]).forEach(function(w){used[w]=1;});var w;do{w='WO-'+rand6();}while(used[w]);var list=((r[1]&&r[1].v)||[]).concat([w]);return put('meta',{k:'wo_used',v:list}).then(function(){return w;});});}
+function migrate(){return all('jobs').then(function(js){var missing=js.filter(function(j){return !/^WO-\d{6}$/.test(j.wo||'');}).sort(function(a,b){return (a.created||0)-(b.created||0);});return missing.reduce(function(p,j){return p.then(function(){return nextWO().then(function(w){j.wo=w;return put('jobs',j);});});},Promise.resolve());});}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
 var store={
   customers:function(){return all('customers');}, customer:function(id){return get('customers',id);}, saveCustomer:function(c){c.updated=Date.now();return put('customers',c).then(function(){return c;});},
@@ -57,7 +60,7 @@ function go(h){location.hash=h;}
 
 function jobCard(j,c){
   var name=c?c.name:'(no customer)';var sub=[j.appliance,j.brand].filter(Boolean).join(' · ');var where=c?[c.address,c.city].filter(Boolean).join(', '):'';
-  return '<div class="card job" data-go="#/job/'+j.id+'"><div class="when">'+esc(j.time?fmtTime(j.time).replace(' ','<small>')+'</small>':'—')+'</div><div class="body"><div class="name">'+esc(name)+'</div><div class="sub">'+esc(sub||'Appliance repair')+(where?' · '+esc(where):'')+'</div><span class="chip '+esc(j.status)+'">'+esc(statusLabel(j.status))+'</span> <span class="chip wo">'+esc(j.wo||'')+'</span>'+(j.price?' <span class="chip">'+money(j.price)+'</span>':'')+'</div></div>';
+  return '<div class="card job" data-go="#/job/'+j.id+'"><div class="when">'+(j.time?esc(fmtTime(j.time)).replace(' ','<small>')+'</small>':'—')+'</div><div class="body"><div class="name">'+esc(name)+'</div><div class="sub">'+esc(sub||'Appliance repair')+(where?' · '+esc(where):'')+'</div><span class="chip '+esc(j.status)+'">'+esc(statusLabel(j.status))+'</span> <span class="chip wo">'+esc(j.wo||'')+'</span>'+(j.price?' <span class="chip">'+money(j.price)+'</span>':'')+'</div></div>';
 }
 function bind(){$$('[data-go]').forEach(function(el){el.onclick=function(){go(el.dataset.go);};});}
 
@@ -123,14 +126,14 @@ function viewCustomer(id){
   });
 }
 
-function viewJob(id){
+function viewJob(id,preDate){
   setTab('jobs');
   var isNew=id==='new';
   Promise.all([isNew?Promise.resolve(null):store.job(id),store.customers()]).then(function(r){
     var j=r[0],cs=r[1].sort(function(a,b){return a.name.localeCompare(b.name);});
     if(!isNew&&!j){app.innerHTML='<div class="card empty">Job not found.</div>';return;}
     var editing=isNew||location.hash.indexOf('/edit')>0;
-    if(isNew){j={id:uid(),wo:'',customerId:sessionStorage.getItem('r3m_pick_customer')||'',date:todayStr(),time:'',appliance:'Refrigerator',brand:'',model:'',issue:'',status:'scheduled',price:'',deposit:'',depositDate:'',notes:'',privateNotes:'',created:Date.now()};sessionStorage.removeItem('r3m_pick_customer');}
+    if(isNew){j={id:uid(),wo:'',customerId:sessionStorage.getItem('r3m_pick_customer')||'',date:(/^\d{4}-\d{2}-\d{2}$/.test(preDate||'')?preDate:todayStr()),time:'',appliance:'Refrigerator',brand:'',model:'',issue:'',status:'scheduled',price:'',deposit:'',depositDate:'',notes:'',privateNotes:'',created:Date.now()};sessionStorage.removeItem('r3m_pick_customer');}
     if(editing){
       setTop(isNew?'New job':'Edit job',true,null);
       app.innerHTML='<div class="card">'+(j.wo?'<span class="pill">'+esc(j.wo)+'</span>':'<span class="pill">WO # assigned on save</span>')+'<label>Customer</label><select id="f_cust"><option value="">— choose —</option>'+cs.map(function(c){return '<option value="'+c.id+'"'+(c.id===j.customerId?' selected':'')+'>'+esc(c.name)+(c.city?' · '+esc(c.city):'')+'</option>';}).join('')+'</select><button class="btn ghost small" id="addcust" style="margin-top:6px">+ Add new customer</button>'
@@ -140,7 +143,7 @@ function viewJob(id){
         +'<label>Problem</label><textarea id="f_issue" placeholder="Not cooling, leaking, no heat…">'+esc(j.issue)+'</textarea>'
         +'<div class="row"><div><label>Price ($)</label><input id="f_price" type="number" inputmode="decimal" value="'+esc(j.price)+'" placeholder="0"></div><div><label>Status</label><select id="f_status">'+CFG.statuses.map(function(s){return '<option value="'+s[0]+'"'+(s[0]===j.status?' selected':'')+'>'+s[1]+'</option>';}).join('')+'</select></div></div>'
         +'<div class="row"><div><label>Deposit taken ($)</label><input id="f_dep" type="number" inputmode="decimal" value="'+esc(j.deposit)+'" placeholder="0"></div><div><label>Deposit date</label><input id="f_depdate" type="date" value="'+esc(j.depositDate||'')+'"></div></div>'+'<label>Work notes <span class="muted">(printed on the invoice)</span></label><textarea id="f_notes" placeholder="Replaced heating element and thermal fuse. Tested 2 cycles.">'+esc(j.notes)+'</textarea>'+'<label>Private notes <span class="muted">(only you see these)</span></label><textarea id="f_pnotes" placeholder="Part cost $42 from Marcone. Customer wants a call before any extra charge.">'+esc(j.privateNotes||'')+'</textarea><button class="btn primary mt" id="save">Save job</button>'+(isNew?'':'<button class="btn ghost" id="cancel">Cancel</button><button class="btn ghost danger" id="del">Delete job</button>')+'</div>';
-      $('#addcust').onclick=function(){sessionStorage.setItem('r3m_return','#/job/'+(isNew?'new':j.id+'/edit'));go('#/customer/new');};
+      $('#addcust').onclick=function(){sessionStorage.setItem('r3m_return','#/job/'+(isNew?'new/'+($('#f_date').value||j.date):j.id+'/edit'));go('#/customer/new');};
       $('#save').onclick=function(){j.customerId=$('#f_cust').value;if(!j.customerId){toast('Pick a customer');return;}j.date=$('#f_date').value||todayStr();j.time=$('#f_time').value;j.appliance=$('#f_app').value;j.brand=$('#f_brand').value;j.model=$('#f_model').value.trim();j.issue=$('#f_issue').value.trim();j.price=$('#f_price').value;j.status=$('#f_status').value;j.deposit=$('#f_dep').value;j.depositDate=$('#f_depdate').value;if(j.deposit&&!j.depositDate)j.depositDate=todayStr();j.notes=$('#f_notes').value.trim();j.privateNotes=$('#f_pnotes').value.trim();(j.wo?Promise.resolve(j.wo):nextWO().then(function(w){j.wo=w;})).then(function(){return store.saveJob(j);}).then(function(){toast('Saved '+j.wo);go('#/job/'+j.id);});};
       if($('#cancel'))$('#cancel').onclick=function(){go('#/job/'+j.id);};
       if($('#del'))$('#del').onclick=function(){if(confirm('Delete this job?'))store.deleteJob(j.id).then(function(){go('#/jobs');});};
@@ -167,6 +170,44 @@ function viewJob(id){
   });
 }
 
+/* ---------- calendar ---------- */
+function viewCalendar(ym){
+  var t=todayStr();ym=/^\d{4}-\d{2}$/.test(ym||'')?ym:t.slice(0,7);
+  var y=+ym.slice(0,4),m=+ym.slice(5)-1;
+  setTop('Calendar',false,{label:'Today',fn:function(){go('#/calendar/'+t.slice(0,7));}});setTab('calendar');
+  Promise.all([store.jobs(),store.customers()]).then(function(r){
+    var byDay={};r[0].forEach(function(j){if(j.status==='cancelled')return;var d=j.date;if(!byDay[d])byDay[d]={n:0,open:0};byDay[d].n++;if(['scheduled','onway','working'].indexOf(j.status)>=0)byDay[d].open++;});
+    var prev=new Date(y,m-1,1),next=new Date(y,m+1,1);
+    function key(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
+    var h='<div class="cal-nav"><button class="cal-btn" data-go="#/calendar/'+key(prev)+'">‹</button><div class="cal-title">'+new Date(y,m,1).toLocaleDateString('en-US',{month:'long',year:'numeric'})+'</div><button class="cal-btn" data-go="#/calendar/'+key(next)+'">›</button></div>';
+    h+='<div class="cal"><div class="cal-head">'+['S','M','T','W','T','F','S'].map(function(d){return '<div>'+d+'</div>';}).join('')+'</div><div class="cal-grid">';
+    var firstDow=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate();
+    for(var i=0;i<firstDow;i++)h+='<div class="cal-cell blank"></div>';
+    for(var d=1;d<=days;d++){var ds=ym+'-'+String(d).padStart(2,'0');var b=byDay[ds];
+      h+='<div class="cal-cell'+(ds===t?' today':'')+(b?' has':'')+(ds<t?' past':'')+'" data-go="#/day/'+ds+'"><span class="cal-d">'+d+'</span>'+(b?'<span class="cal-n'+(b.open?' open':'')+'">'+b.n+'</span>':'')+'</div>';}
+    h+='</div></div>';
+    var monthJobs=r[0].filter(function(j){return j.date.slice(0,7)===ym&&j.status!=='cancelled';});
+    var rev=monthJobs.filter(function(j){return j.status==='paid';}).reduce(function(s,j){return s+(+j.price||0);},0);
+    h+='<div class="cal-sum"><span><b>'+monthJobs.length+'</b> jobs this month</span><span><b>'+money(rev)+'</b> collected</span></div>';
+    h+='<p class="muted" style="text-align:center;font-size:13px;margin:8px 0 0">Tap a day to see its jobs. Blue number = jobs still open, gray = all done.</p>';
+    app.innerHTML=h;bind();
+  });
+}
+function viewDay(ds){
+  var t=todayStr();if(!/^\d{4}-\d{2}-\d{2}$/.test(ds||''))ds=t;
+  setTop(ds===t?'Today':fmtDate(ds),true,{label:'+ Job',fn:function(){go('#/job/new/'+ds);}});setTab('calendar');
+  Promise.all([store.jobs(),store.customers()]).then(function(r){
+    var cm={};r[1].forEach(function(c){cm[c.id]=c;});
+    var js=r[0].filter(function(j){return j.date===ds;}).sort(function(a,b){return (a.time||'').localeCompare(b.time||'');});
+    var p=ds.split('-');var cur=new Date(+p[0],+p[1]-1,+p[2]);var pd=new Date(cur);pd.setDate(cur.getDate()-1);var nd=new Date(cur);nd.setDate(cur.getDate()+1);
+    var h='<div class="cal-nav"><button class="cal-btn" data-go="#/day/'+todayStr(pd)+'">‹</button><div class="cal-title">'+esc(cur.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}))+'</div><button class="cal-btn" data-go="#/day/'+todayStr(nd)+'">›</button></div>';
+    h+='<div class="section">'+js.length+' job'+(js.length===1?'':'s')+'</div>';
+    h+=js.length?js.map(function(j){return jobCard(j,cm[j.customerId]);}).join(''):'<div class="card empty">Nothing scheduled this day.<br><button class="btn primary small mt" data-go="#/job/new/'+ds+'">Add a job on '+esc(fmtDate(ds).replace(/^\w+, /,''))+'</button></div>';
+    h+='<button class="btn ghost" data-go="#/calendar/'+ds.slice(0,7)+'">‹ Back to month</button>';
+    app.innerHTML=h;bind();
+  });
+}
+
 function viewMore(){
   setTop('More',false,null);setTab('more');
   Promise.all([store.jobs(),store.customers()]).then(function(r){
@@ -180,7 +221,7 @@ function viewMore(){
       +'<div class="section">By city</div><div class="card">'+bars(byCity)+'</div><div class="section">By appliance</div><div class="card">'+bars(byApp)+'</div>'
       +'<div class="section">Data</div><div class="card"><p class="muted" style="margin:0 0 10px;font-size:14px">Right now everything is saved on this phone only. Back it up once a week until the cloud sync is connected.</p><button class="btn small" id="exp">Download backup</button><label class="btn small" style="margin-top:8px">Restore from backup<input type="file" accept="application/json" id="imp" style="display:none"></label></div>'
       +'<div class="section">Shortcuts</div><div class="card"><a class="btn small" href="/go">Review link tool (quick)</a><a class="btn small mt" href="https://business.google.com/reviews" target="_blank" style="margin-top:8px">Google reviews</a></div>'
-      +'<p class="muted" style="text-align:center;font-size:12px;margin-top:20px">R3M app v1 · '+esc(CFG.phoneDisplay)+'</p>';
+      +'<p class="muted" style="text-align:center;font-size:12px;margin-top:20px">R3M app v3 · '+esc(CFG.phoneDisplay)+'</p>';
     $('#exp').onclick=function(){store.exportAll().then(function(d){var b=new Blob([JSON.stringify(d)],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='r3m-backup-'+todayStr()+'.json';a.click();});};
     $('#imp').onchange=function(){var f=this.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){try{store.importAll(JSON.parse(rd.result)).then(function(){toast('Restored');viewMore();});}catch(e){toast('Bad file');}};rd.readAsText(f);};
   });
@@ -204,7 +245,7 @@ function viewInvoice(id){
 
 /* ---------- router ---------- */
 function route(){var h=location.hash||'#/today';var p=h.slice(2).split('/');window.scrollTo(0,0);
-  if(p[0]==='today'||p[0]==='')viewToday();else if(p[0]==='jobs')viewJobs();else if(p[0]==='job')viewJob(p[1]);else if(p[0]==='customers')viewCustomers();else if(p[0]==='customer')viewCustomer(p[1]);else if(p[0]==='more')viewMore();else if(p[0]==='invoice')viewInvoice(p[1]);else viewToday();}
+  if(p[0]==='today'||p[0]==='')viewToday();else if(p[0]==='jobs')viewJobs();else if(p[0]==='job')viewJob(p[1],p[1]==='new'?p[2]:'');else if(p[0]==='calendar')viewCalendar(p[1]);else if(p[0]==='day')viewDay(p[1]);else if(p[0]==='customers')viewCustomers();else if(p[0]==='customer')viewCustomer(p[1]);else if(p[0]==='more')viewMore();else if(p[0]==='invoice')viewInvoice(p[1]);else viewToday();}
 back.onclick=function(){history.length>1?history.back():go('#/today');};
 window.addEventListener('hashchange',route);
 open().then(migrate).then(route).catch(function(e){app.innerHTML='<div class="card empty">Storage not available in this browser ('+esc(e&&e.message)+'). Try Safari or Chrome.</div>';});

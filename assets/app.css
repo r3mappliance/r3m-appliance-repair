@@ -64,3 +64,22 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue2)}
 .inv-t td{padding:10px 0;border-bottom:1px solid var(--line);vertical-align:top;font-size:15px}
 .inv-t tr.tot td{font-weight:900;font-size:18px;border-bottom:0;padding-top:14px;color:var(--navy)}
 @media print{body{background:#fff;padding:0}.top,.tabs,.no-print,.toast{display:none!important}main{padding:0;max-width:none}.card{box-shadow:none;border:0}}
+
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin:4px 0 10px}
+.cal-btn{width:44px;height:44px;border-radius:12px;border:2px solid var(--line);background:#fff;font-size:26px;line-height:1;color:var(--blue);cursor:pointer;font-weight:800}
+.cal-title{font-weight:900;font-size:18px;color:var(--navy)}
+.cal{background:#fff;border:1px solid var(--line);border-radius:16px;padding:10px;box-shadow:0 6px 20px rgba(11,31,58,.05)}
+.cal-head{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:11px;font-weight:800;color:var(--muted);letter-spacing:.06em;margin-bottom:4px}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-cell{aspect-ratio:1;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;background:var(--ice);-webkit-tap-highlight-color:transparent}
+.cal-cell.blank{background:transparent;cursor:default}
+.cal-cell.past .cal-d{color:var(--muted)}
+.cal-cell.has{background:#eef4ff}
+.cal-cell.today{outline:2px solid var(--orange);outline-offset:-2px}
+.cal-cell.today .cal-d{color:var(--orange);font-weight:900}
+.cal-d{font-weight:800;font-size:15px;color:var(--navy);line-height:1}
+.cal-n{min-width:18px;height:18px;border-radius:999px;background:#cbd5e1;color:#fff;font-size:11px;font-weight:900;display:flex;align-items:center;justify-content:center;padding:0 5px;line-height:1}
+.cal-n.open{background:var(--blue2)}
+.cal-sum{display:flex;justify-content:space-between;margin:12px 4px 0;font-size:14px;color:var(--muted)}
+.cal-sum b{color:var(--navy)}
+.tabs a{font-size:10px}
