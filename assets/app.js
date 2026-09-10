@@ -29,6 +29,7 @@ function nextWO(){return Promise.all([all('jobs'),get('meta','wo_used')]).then(f
 function migrate(){return all('jobs').then(function(js){var missing=js.filter(function(j){return !/^WO-\d{6}$/.test(j.wo||'');}).sort(function(a,b){return (a.created||0)-(b.created||0);});return missing.reduce(function(p,j){return p.then(function(){return nextWO().then(function(w){j.wo=w;return put('jobs',j);});});},Promise.resolve());});}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
 var store={
+  meta:function(k){return get('meta',k).then(function(m){return m?m.v:null;});}, setMeta:function(k,v){return put('meta',{k:k,v:v});},
   customers:function(){return all('customers');}, customer:function(id){return get('customers',id);}, saveCustomer:function(c){c.updated=Date.now();return put('customers',c).then(function(){return c;});},
   jobs:function(){return all('jobs');}, job:function(id){return get('jobs',id);}, saveJob:function(j){j.updated=Date.now();return put('jobs',j).then(function(){return j;});}, deleteJob:function(id){return del('jobs',id);},
   photos:function(jobId){return all('photos').then(function(p){return p.filter(function(x){return x.jobId===jobId;});});}, savePhoto:function(p){return put('photos',p);}, deletePhoto:function(id){return del('photos',id);},
@@ -79,6 +80,7 @@ function viewToday(){
     var upcoming=r[0].filter(function(j){return j.date>t&&j.status!=='cancelled';}).sort(function(a,b){return (a.date+a.time).localeCompare(b.date+b.time);}).slice(0,5);
     var h='';
     h+='<div class="section">'+esc(fmtDate(t))+' · '+todays.length+' job'+(todays.length===1?'':'s')+'</div>';
+    if(todays.length)h+='<button class="btn blue small" style="margin:0 0 10px" data-go="#/map/'+t+'">🗺 Map & route for today</button>';
     h+=todays.length?todays.map(function(j){return jobCard(j,cm[j.customerId]);}).join(''):'<div class="card empty">Nothing scheduled today.<br><button class="btn primary small mt" data-go="#/job/new">Add a job</button></div>';
     if(open.length){h+='<div class="section">Still open (past days)</div>'+open.map(function(j){return jobCard(j,cm[j.customerId]).replace('<div class="when">','<div class="when">'+esc(fmtDate(j.date).split(',')[0])+'<br>');}).join('');}
     if(upcoming.length){h+='<div class="section">Coming up</div>'+upcoming.map(function(j){return jobCard(j,cm[j.customerId]).replace('<div class="when">','<div class="when">'+esc(fmtDate(j.date).replace(/^\w+, /,''))+'<br>');}).join('');}
@@ -212,15 +214,65 @@ function viewDay(ds){
     var p=ds.split('-');var cur=new Date(+p[0],+p[1]-1,+p[2]);var pd=new Date(cur);pd.setDate(cur.getDate()-1);var nd=new Date(cur);nd.setDate(cur.getDate()+1);
     var h='<div class="cal-nav"><button class="cal-btn" data-go="#/day/'+todayStr(pd)+'">‹</button><div class="cal-title">'+esc(cur.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}))+'</div><button class="cal-btn" data-go="#/day/'+todayStr(nd)+'">›</button></div>';
     h+='<div class="section">'+js.length+' job'+(js.length===1?'':'s')+'</div>';
+    if(js.length)h+='<button class="btn blue small" style="margin:0 0 10px" data-go="#/map/'+ds+'">🗺 Map & route for this day</button>';
     h+=js.length?js.map(function(j){return jobCard(j,cm[j.customerId]);}).join(''):'<div class="card empty">Nothing scheduled this day.<br><button class="btn primary small mt" data-go="#/job/new/'+ds+'">Add a job on '+esc(fmtDate(ds).replace(/^\w+, /,''))+'</button></div>';
     h+='<button class="btn ghost" data-go="#/calendar/'+ds.slice(0,7)+'">‹ Back to month</button>';
     app.innerHTML=h;bind();
   });
 }
 
+/* ---------- map & route (Leaflet + OpenStreetMap tiles, Nominatim geocoding cached on the customer, OSRM driving route) ---------- */
+var LEAF='https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/';
+function loadLeaflet(){if(window.L)return Promise.resolve();return new Promise(function(res,rej){var l=document.createElement('link');l.rel='stylesheet';l.href=LEAF+'leaflet.min.css';var cssDone=false,jsDone=false;function chk(){if(cssDone&&jsDone)res();}l.onload=l.onerror=function(){cssDone=true;chk();};document.head.appendChild(l);var sc=document.createElement('script');sc.src=LEAF+'leaflet.min.js';sc.onload=function(){jsDone=true;chk();};sc.onerror=rej;document.head.appendChild(sc);setTimeout(function(){cssDone=true;chk();},3000);});}
+function addrStr(c){return [c.address,c.city,'TX'].filter(Boolean).join(', ');}
+function geocode(q){return fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=us&q='+encodeURIComponent(q),{headers:{'Accept':'application/json'}}).then(function(r){return r.json();}).then(function(a){return a&&a[0]?{lat:+a[0].lat,lng:+a[0].lon}:null;});}
+function sleep(ms){return new Promise(function(r){setTimeout(r,ms);});}
+function locateCustomers(cs){ /* geocode any customer with an address but no cached position; 1 request/second (Nominatim policy) */
+  var todo=cs.filter(function(c){return c.address&&(!c.geo||c.geoFor!==addrStr(c));});
+  return todo.reduce(function(p,c){return p.then(function(){return geocode(addrStr(c)).catch(function(){return null;}).then(function(g){c.geo=g;c.geoFor=addrStr(c);return store.saveCustomer(c);}).then(function(){return todo.length>1?sleep(1100):null;});});},Promise.resolve());}
+function osrmRoute(pts){var s=pts.map(function(p){return p.lng+','+p.lat;}).join(';');return fetch('https://router.project-osrm.org/route/v1/driving/'+s+'?overview=full&geometries=geojson').then(function(r){return r.json();}).then(function(d){var r=d.routes&&d.routes[0];if(!r)return null;return {coords:r.geometry.coordinates.map(function(c){return [c[1],c[0]];}),miles:r.distance/1609.34,mins:r.duration/60};});}
+function gmapsDir(stops){ /* stops: array of address strings, first = origin */
+  if(stops.length<2)return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(stops[0]||'');
+  var o=stops[0],d=stops[stops.length-1],w=stops.slice(1,-1).slice(0,9);
+  return 'https://www.google.com/maps/dir/?api=1&travelmode=driving&origin='+encodeURIComponent(o)+'&destination='+encodeURIComponent(d)+(w.length?'&waypoints='+encodeURIComponent(w.join('|')):'');}
+function viewMap(ds){
+  var t=todayStr();if(!/^\d{4}-\d{2}-\d{2}$/.test(ds||''))ds=t;
+  setTop('Route · '+fmtDate(ds).replace(/^\w+, /,''),true,null);setTab(ds===t?'today':'calendar');
+  app.innerHTML='<div class="card empty" id="mapmsg">Loading map…</div>';
+  Promise.all([store.jobs(),store.customers(),store.meta('home'),loadLeaflet().then(function(){return true;}).catch(function(){return false;})]).then(function(r){
+    var cm={};r[1].forEach(function(c){cm[c.id]=c;});var home=r[2]||null;var leafOk=r[3];
+    var js=r[0].filter(function(j){return j.date===ds&&j.status!=='cancelled';}).sort(function(a,b){return (a.time||'').localeCompare(b.time||'');});
+    if(!js.length){app.innerHTML='<div class="card empty">No jobs on this day.</div>';return;}
+    var custs=js.map(function(j){return cm[j.customerId];}).filter(Boolean);
+    $('#mapmsg').textContent='Locating '+custs.length+' address'+(custs.length===1?'':'es')+'…';
+    var homeP=(home&&home.address&&(!home.geo||home.geoFor!==home.address))?geocode(home.address).catch(function(){return null;}).then(function(g){home.geo=g;home.geoFor=home.address;return store.setMeta('home',home);}):Promise.resolve();
+    homeP.then(function(){return locateCustomers(custs);}).then(function(){
+      var stops=js.map(function(j,i){var c=cm[j.customerId]||{};return {n:i+1,job:j,c:c,geo:c.geo||null,addr:c.address?addrStr(c):''};});
+      var located=stops.filter(function(s){return s.geo;});var missing=stops.filter(function(s){return !s.geo;});
+      var addrs=(home&&home.address?[home.address]:[]).concat(stops.filter(function(s){return s.addr;}).map(function(s){return s.addr;}));
+      var h='<div class="map-sum"><span><b>'+js.length+'</b> job'+(js.length===1?'':'s')+'</span><span><b>'+located.length+'</b> on map</span><span id="rt"><b>…</b> route</span></div>';
+      h+=leafOk?'<div id="map" class="map"></div>':'<div class="card empty">Map could not load (no internet?). The route button below still works.</div>';
+      h+='<a class="btn primary" href="'+esc(gmapsDir(addrs))+'" target="_blank" rel="noopener">▶ Open route in Google Maps</a>';
+      if(!home||!home.address)h+='<p class="muted" style="font-size:13px;text-align:center;margin:2px 0 10px">Tip: set your start address in More → Settings so the route begins from home.</p>';
+      h+='<div class="section">Stops in order</div>'+stops.map(function(s){return '<div class="card job" data-go="#/job/'+s.job.id+'"><div class="when stop-n '+(s.geo?'':'nogeo')+'">'+s.n+'</div><div class="body"><div class="name">'+esc(s.c.name||'(no customer)')+'</div><div class="sub">'+esc((s.job.time?fmtWindow(s.job.time)+' · ':'')+(s.addr||'No address'))+'</div><span class="chip '+esc(s.job.status)+'">'+esc(statusLabel(s.job.status))+'</span>'+(s.geo?'':' <span class="chip" style="background:#fdecea;color:var(--red)">not found on map</span>')+'</div></div>';}).join('');
+      app.innerHTML=h;bind();
+      if(!leafOk||!located.length){$('#rt').innerHTML='<b>—</b> route';return;}
+      var map=L.map('map',{zoomControl:true,attributionControl:true});
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+      var pts=[];
+      if(home&&home.geo){pts.push(home.geo);L.marker([home.geo.lat,home.geo.lng],{icon:L.divIcon({className:'',html:'<div class="pin home">🏠</div>',iconSize:[34,34],iconAnchor:[17,17]})}).addTo(map).bindPopup('Start: '+esc(home.address));}
+      located.forEach(function(s){pts.push(s.geo);var col=['done','paid'].indexOf(s.job.status)>=0?'#1e8e3e':(s.job.status==='onway'||s.job.status==='working'?'#e46820':'#165dff');
+        L.marker([s.geo.lat,s.geo.lng],{icon:L.divIcon({className:'',html:'<div class="pin" style="background:'+col+'">'+s.n+'</div>',iconSize:[34,34],iconAnchor:[17,17]})}).addTo(map).bindPopup('<b>'+s.n+'. '+esc(s.c.name)+'</b><br>'+esc(s.job.time?fmtWindow(s.job.time):'')+'<br>'+esc(s.addr)+'<br><a href="#/job/'+s.job.id+'">Open job</a>');});
+      map.fitBounds(L.latLngBounds(pts.map(function(p){return [p.lat,p.lng];})),{padding:[30,30]});
+      var straight=L.polyline(pts.map(function(p){return [p.lat,p.lng];}),{color:'#165dff',weight:3,opacity:.5,dashArray:'6 8'}).addTo(map);
+      if(pts.length>=2){osrmRoute(pts).then(function(rt){if(!rt)throw 0;map.removeLayer(straight);L.polyline(rt.coords,{color:'#165dff',weight:5,opacity:.85}).addTo(map);$('#rt').innerHTML='<b>'+rt.miles.toFixed(0)+' mi</b> · '+Math.round(rt.mins)+' min driving';}).catch(function(){$('#rt').innerHTML='<b>—</b> route (offline)';});}else{$('#rt').innerHTML='<b>1</b> stop';}
+    });
+  });
+}
+
 function viewMore(){
   setTop('More',false,null);setTab('more');
-  Promise.all([store.jobs(),store.customers()]).then(function(r){
+  Promise.all([store.jobs(),store.customers(),store.meta('home')]).then(function(r){
     var cm={};r[1].forEach(function(c){cm[c.id]=c;});var m=todayStr().slice(0,7);
     var mj=r[0].filter(function(j){return j.date.slice(0,7)===m&&j.status!=='cancelled';});
     var rev=mj.filter(function(j){return j.status==='paid';}).reduce(function(s,j){return s+(+j.price||0);},0);
@@ -230,8 +282,10 @@ function viewMore(){
     app.innerHTML='<div class="section">This month</div><div class="stat"><div><b>'+mj.length+'</b><small>jobs</small></div><div><b>'+money(rev)+'</b><small>collected</small></div><div><b>'+r[1].length+'</b><small>customers total</small></div><div><b>'+asked+'</b><small>review links sent</small></div></div>'
       +'<div class="section">By city</div><div class="card">'+bars(byCity)+'</div><div class="section">By appliance</div><div class="card">'+bars(byApp)+'</div>'
       +'<div class="section">Data</div><div class="card"><p class="muted" style="margin:0 0 10px;font-size:14px">Right now everything is saved on this phone only. Back it up once a week until the cloud sync is connected.</p><button class="btn small" id="exp">Download backup</button><label class="btn small" style="margin-top:8px">Restore from backup<input type="file" accept="application/json" id="imp" style="display:none"></label></div>'
+      +'<div class="section">Settings</div><div class="card"><label style="margin-top:0">Start address for routes (home / shop)</label><input id="home" placeholder="Street, City, TX" value="'+esc((r[2]&&r[2].address)||'')+'"><p class="muted" style="font-size:13px;margin:8px 0 10px">Private. Only used to start the day\'s route on the map.</p><button class="btn small" id="savehome">Save</button></div>'
       +'<div class="section">Shortcuts</div><div class="card"><a class="btn small" href="/go">Review link tool (quick)</a><a class="btn small mt" href="https://business.google.com/reviews" target="_blank" style="margin-top:8px">Google reviews</a></div>'
-      +'<p class="muted" style="text-align:center;font-size:12px;margin-top:20px">R3M app v4 · '+esc(CFG.phoneDisplay)+'</p>';
+      +'<p class="muted" style="text-align:center;font-size:12px;margin-top:20px">R3M app v5 · '+esc(CFG.phoneDisplay)+'</p>';
+    $('#savehome').onclick=function(){var a=$('#home').value.trim();store.setMeta('home',a?{address:a}:null).then(function(){toast(a?'Start address saved':'Cleared');});};
     $('#exp').onclick=function(){store.exportAll().then(function(d){var b=new Blob([JSON.stringify(d)],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='r3m-backup-'+todayStr()+'.json';a.click();});};
     $('#imp').onchange=function(){var f=this.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){try{store.importAll(JSON.parse(rd.result)).then(function(){toast('Restored');viewMore();});}catch(e){toast('Bad file');}};rd.readAsText(f);};
   });
@@ -255,7 +309,7 @@ function viewInvoice(id){
 
 /* ---------- router ---------- */
 function route(){var h=location.hash||'#/today';var p=h.slice(2).split('/');window.scrollTo(0,0);
-  if(p[0]==='today'||p[0]==='')viewToday();else if(p[0]==='jobs')viewJobs();else if(p[0]==='job')viewJob(p[1],p[1]==='new'?p[2]:'');else if(p[0]==='calendar')viewCalendar(p[1]);else if(p[0]==='day')viewDay(p[1]);else if(p[0]==='customers')viewCustomers();else if(p[0]==='customer')viewCustomer(p[1]);else if(p[0]==='more')viewMore();else if(p[0]==='invoice')viewInvoice(p[1]);else viewToday();}
+  if(p[0]==='today'||p[0]==='')viewToday();else if(p[0]==='jobs')viewJobs();else if(p[0]==='job')viewJob(p[1],p[1]==='new'?p[2]:'');else if(p[0]==='calendar')viewCalendar(p[1]);else if(p[0]==='day')viewDay(p[1]);else if(p[0]==='map')viewMap(p[1]);else if(p[0]==='customers')viewCustomers();else if(p[0]==='customer')viewCustomer(p[1]);else if(p[0]==='more')viewMore();else if(p[0]==='invoice')viewInvoice(p[1]);else viewToday();}
 back.onclick=function(){history.length>1?history.back():go('#/today');};
 window.addEventListener('hashchange',route);
 open().then(migrate).then(route).catch(function(e){app.innerHTML='<div class="card empty">Storage not available in this browser ('+esc(e&&e.message)+'). Try Safari or Chrome.</div>';});

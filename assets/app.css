@@ -86,3 +86,12 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue2)}
 .win-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px}
 .win-row .btn{width:auto;padding:8px 12px}
 .job .when small{white-space:nowrap}
+.map{height:min(60vh,460px);border-radius:16px;border:1px solid var(--line);overflow:hidden;margin-bottom:10px;background:#e9eef4}
+.map-sum{display:flex;justify-content:space-between;gap:10px;margin:2px 4px 10px;font-size:14px;color:var(--muted)}
+.map-sum b{color:var(--navy)}
+.pin{width:34px;height:34px;border-radius:50%;background:var(--blue2);color:#fff;font-weight:900;font-size:15px;display:flex;align-items:center;justify-content:center;border:3px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+.pin.home{background:#fff;font-size:18px;border-color:var(--navy)}
+.stop-n{font-size:20px!important;color:#fff!important;background:var(--blue2)!important;display:flex;align-items:center;justify-content:center}
+.stop-n.nogeo{background:#cbd5e1!important}
+.leaflet-popup-content{font:inherit;font-size:14px;line-height:1.5}
+.leaflet-popup-content a{color:var(--blue2);font-weight:800}
