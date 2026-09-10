@@ -8,7 +8,7 @@ button{font:inherit}
 .top h1{font-size:19px;margin:0;flex:1;letter-spacing:-.01em}
 .top .back{border:0;background:none;font-size:22px;padding:4px 8px 4px 0;color:var(--blue);cursor:pointer}
 .top .act{border:0;background:var(--orange);color:#fff;font-weight:800;border-radius:10px;padding:9px 14px;cursor:pointer}
-main{padding:14px 14px 20px;max-width:640px;margin:0 auto}
+main{padding:14px 14px 96px;max-width:640px;margin:0 auto}
 .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:0 6px 20px rgba(11,31,58,.05)}
 .section{font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin:18px 4px 8px}
 .job{display:flex;gap:12px;align-items:flex-start;cursor:pointer}
@@ -52,3 +52,15 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue2)}
 .ph{font-family:"R3M Phone","DejaVu Serif",Georgia,serif;font-weight:700;white-space:nowrap}.ph1{color:#0a5c9b}.ph2{color:#e46820}
 @font-face{font-family:"R3M Phone";src:url(/assets/phone.woff) format("woff");font-weight:700;font-display:swap}
 .fab{position:fixed;right:16px;bottom:calc(var(--tab) + 16px + env(safe-area-inset-bottom));width:56px;height:56px;border-radius:50%;background:var(--orange);color:#fff;font-size:30px;line-height:56px;text-align:center;box-shadow:0 10px 24px rgba(228,104,32,.4);z-index:25;border:0;cursor:pointer}
+
+.chip.wo{background:#eef4ff;color:var(--blue)}
+.card.private{background:#fffbeb;border-color:#fde68a}
+.inv .inv-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;border-bottom:2px solid var(--line);padding-bottom:12px;margin-bottom:12px}
+.inv .inv-head img{height:44px}
+.inv .inv-meta{display:flex;justify-content:space-between;gap:12px;margin:10px 0 12px}
+.inv .lbl{font-size:12px;text-transform:uppercase;letter-spacing:.06em;font-weight:800;color:var(--muted)}
+.inv-t{width:100%;border-collapse:collapse;margin-top:6px}
+.inv-t th{font-size:12px;text-align:left;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;padding:8px 0;border-bottom:2px solid var(--line)}
+.inv-t td{padding:10px 0;border-bottom:1px solid var(--line);vertical-align:top;font-size:15px}
+.inv-t tr.tot td{font-weight:900;font-size:18px;border-bottom:0;padding-top:14px;color:var(--navy)}
+@media print{body{background:#fff;padding:0}.top,.tabs,.no-print,.toast{display:none!important}main{padding:0;max-width:none}.card{box-shadow:none;border:0}}
