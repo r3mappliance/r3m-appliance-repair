@@ -2,6 +2,7 @@
 // - Saves the request to Supabase (service_requests table)
 // - Emails the owner (replaces the old Formspree notification)
 // - Sends an automatic confirmation email to the customer (if they gave an email)
+// - Texts the owner, and texts the customer a confirmation (if Twilio is configured)
 //
 // Requires these Vercel Environment Variables:
 //   SUPABASE_URL
@@ -9,6 +10,10 @@
 //   RESEND_API_KEY
 //   RESEND_FROM_EMAIL       (optional, defaults to a resend.dev sandbox sender)
 //   OWNER_NOTIFICATION_EMAIL (optional, defaults to r3mappliances@gmail.com)
+//   TWILIO_ACCOUNT_SID       (optional — SMS is skipped entirely if not set)
+//   TWILIO_AUTH_TOKEN        (optional)
+//   TWILIO_FROM_NUMBER       (optional, the Twilio number SMS is sent from, e.g. +14691234567)
+//   OWNER_NOTIFICATION_PHONE (optional, defaults to +14694464242)
 //
 // NOTE: while using the Resend sandbox sender (onboarding@resend.dev), Resend only
 // allows sending to the exact, case-sensitive email address the Resend account was
@@ -44,6 +49,39 @@ async function sendEmail({ apiKey, from, to, subject, text }) {
     return { ok: r.ok, status: r.status, body: bodyText };
   } catch (err) {
     console.error('sendEmail failed', err);
+    return { ok: false, status: 0, body: String(err) };
+  }
+}
+
+// Normalizes a US phone number to E.164 (+1XXXXXXXXXX) for Twilio.
+// Returns null if it doesn't look like a valid 10 (or 11, leading 1) digit US number.
+function toE164Us(raw) {
+  if (!raw) return null;
+  const digits = String(raw).replace(/\D/g, '');
+  if (digits.length === 10) return `+1${digits}`;
+  if (digits.length === 11 && digits[0] === '1') return `+${digits}`;
+  return null;
+}
+
+async function sendSms({ accountSid, authToken, from, to, body }) {
+  try {
+    const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
+    const params = new URLSearchParams({ From: from, To: to, Body: body });
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        Authorization: `Basic ${Buffer.from(`${accountSid}:${authToken}`).toString('base64')}`,
+      },
+      body: params.toString(),
+    });
+    const bodyText = await r.text();
+    if (!r.ok) {
+      console.error('sendSms non-ok response', r.status, bodyText);
+    }
+    return { ok: r.ok, status: r.status, body: bodyText };
+  } catch (err) {
+    console.error('sendSms failed', err);
     return { ok: false, status: 0, body: String(err) };
   }
 }
@@ -88,6 +126,10 @@ module.exports = async function handler(req, res) {
   const RESEND_KEY = process.env.RESEND_API_KEY;
   const OWNER_EMAIL = process.env.OWNER_NOTIFICATION_EMAIL || 'r3mappliances@gmail.com';
   const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'R3M Appliance Repair <onboarding@resend.dev>';
+  const TWILIO_SID = process.env.TWILIO_ACCOUNT_SID;
+  const TWILIO_TOKEN = process.env.TWILIO_AUTH_TOKEN;
+  const TWILIO_FROM = process.env.TWILIO_FROM_NUMBER;
+  const OWNER_PHONE = toE164Us(process.env.OWNER_NOTIFICATION_PHONE) || '+14694464242';
 
   let insertedId = null;
   if (SUPABASE_URL && SERVICE_KEY) {
@@ -165,6 +207,29 @@ module.exports = async function handler(req, res) {
           console.error('Failed to flag confirmation_email_sent', err);
         }
       }
+    }
+  }
+
+  if (TWILIO_SID && TWILIO_TOKEN && TWILIO_FROM) {
+    // Text the owner
+    await sendSms({
+      accountSid: TWILIO_SID,
+      authToken: TWILIO_TOKEN,
+      from: TWILIO_FROM,
+      to: OWNER_PHONE,
+      body: `New R3M service request: ${record.name}, ${record.appliance} — ${record.city}. ${record.phone}`,
+    });
+
+    // Confirm to the customer, if we have a usable number
+    const customerPhone = toE164Us(record.phone);
+    if (customerPhone) {
+      await sendSms({
+        accountSid: TWILIO_SID,
+        authToken: TWILIO_TOKEN,
+        from: TWILIO_FROM,
+        to: customerPhone,
+        body: `Hi ${record.name}, R3M Appliance Repair got your request for your ${record.appliance.toLowerCase()}. We'll text or call ${record.phone} shortly to confirm a time. Questions? Call/text (469) 446-4242.`,
+      });
     }
   }
 
