@@ -21,15 +21,24 @@
       var s=document.createElement('input'); s.type='hidden'; s.name='_subject'; s.value='New Service Request from R3M Website'; form.appendChild(s);
     }
     var started=Date.now();
+    var action=form.getAttribute('action')||ENDPOINT;
+    var isJsonApi=action.indexOf('/api/')===0; // our own serverless endpoints expect JSON, not multipart FormData
     form.addEventListener('submit',function(ev){
       ev.preventDefault();
       if(Date.now()-started<2500){ status(form,'Please take a second and try again.',false); return; } // bot speed check
       var btn=form.querySelector('button[type=submit]'); var old=btn?btn.textContent:'';
       if(btn){btn.disabled=true; btn.textContent='Sending...';}
-      var fd=new FormData(form); fd.append('page',location.pathname);
-      fetch(form.getAttribute('action')||ENDPOINT,{method:'POST',body:fd,headers:{Accept:'application/json'}})
-        .then(function(r){ if(!r.ok) throw new Error('bad'); form.reset(); status(form,'Thank you. Your request was sent. R3M will contact you shortly.',true); if(window.gtag) gtag('event','generate_lead',{form_location:location.pathname}); })
-        .catch(function(){ status(form,'Your request could not be sent. Please call (469) 446-4242.',false); })
+      var fd=new FormData(form);
+      var opts;
+      if(isJsonApi){
+        opts={method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify(Object.fromEntries(fd.entries()))};
+      } else {
+        fd.append('page',location.pathname);
+        opts={method:'POST',body:fd,headers:{Accept:'application/json'}};
+      }
+      fetch(action,opts)
+        .then(function(r){ if(!r.ok) throw new Error('bad'); form.reset(); status(form,'Thank you. Your request was sent successfully. R3M will contact you shortly, and you will get a confirmation email if you provided one.',true); if(window.gtag) gtag('event','generate_lead',{form_location:location.pathname}); })
+        .catch(function(){ status(form,'Your request could not be sent. Please check the required fields, or call (469) 446-4242.',false); })
         .then(function(){ if(btn){btn.disabled=false; btn.textContent=old;} });
     });
   }
