@@ -32,13 +32,14 @@ async function sendEmail({ apiKey, from, to, subject, text }) {
       },
       body: JSON.stringify({ from, to: [to], subject, text }),
     });
+    const bodyText = await r.text();
     if (!r.ok) {
-      console.error('sendEmail non-ok response', r.status, await r.text());
+      console.error('sendEmail non-ok response', r.status, bodyText);
     }
-    return r.ok;
+    return { ok: r.ok, status: r.status, body: bodyText };
   } catch (err) {
     console.error('sendEmail failed', err);
-    return false;
+    return { ok: false, status: 0, body: String(err) };
   }
 }
 
@@ -144,7 +145,7 @@ module.exports = async function handler(req, res) {
       });
       customerSent = confirmed;
 
-      if (confirmed && insertedId && SUPABASE_URL && SERVICE_KEY) {
+      if (confirmed.ok && insertedId && SUPABASE_URL && SERVICE_KEY) {
         try {
           await fetch(`${SUPABASE_URL}/rest/v1/service_requests?id=eq.${insertedId}`, {
             method: 'PATCH',
