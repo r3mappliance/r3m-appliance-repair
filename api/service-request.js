@@ -217,7 +217,7 @@ module.exports = async function handler(req, res) {
       authToken: TWILIO_TOKEN,
       from: TWILIO_FROM,
       to: OWNER_PHONE,
-      body: `New R3M service request: ${record.name}, ${record.appliance} — ${record.city}. ${record.phone}`,
+      body: `New R3M service request:\n${summaryText}`,
     });
 
     // Confirm to the customer, if we have a usable number
