@@ -8,7 +8,12 @@
 //   SUPABASE_SERVICE_ROLE_KEY
 //   RESEND_API_KEY
 //   RESEND_FROM_EMAIL       (optional, defaults to a resend.dev sandbox sender)
-//   OWNER_NOTIFICATION_EMAIL (optional, defaults to R3mappliances@gmail.com)
+//   OWNER_NOTIFICATION_EMAIL (optional, defaults to r3mappliances@gmail.com)
+//
+// NOTE: while using the Resend sandbox sender (onboarding@resend.dev), Resend only
+// allows sending to the exact, case-sensitive email address the Resend account was
+// signed up with. OWNER_NOTIFICATION_EMAIL must match that exactly (lowercase here)
+// or the owner notification email will silently fail even though customer emails work.
 
 const REQUIRED_FIELDS = [
   'name', 'phone', 'street_address', 'city', 'state', 'zip_code', 'appliance', 'issue',
@@ -81,7 +86,7 @@ module.exports = async function handler(req, res) {
   const SUPABASE_URL = process.env.SUPABASE_URL;
   const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const RESEND_KEY = process.env.RESEND_API_KEY;
-  const OWNER_EMAIL = process.env.OWNER_NOTIFICATION_EMAIL || 'R3mappliances@gmail.com';
+  const OWNER_EMAIL = process.env.OWNER_NOTIFICATION_EMAIL || 'r3mappliances@gmail.com';
   const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'R3M Appliance Repair <onboarding@resend.dev>';
 
   let insertedId = null;
@@ -163,5 +168,5 @@ module.exports = async function handler(req, res) {
     }
   }
 
-  return res.status(200).json({ ok: true, debug: { ownerSent, customerSent } });
+  return res.status(200).json({ ok: true });
 }
