@@ -9,7 +9,12 @@
   function status(form,msg,ok){
     var box=form.querySelector('.form-status')||form.parentNode.querySelector('.form-status');
     if(!box){box=document.createElement('p'); box.className='form-status'; form.appendChild(box);}
-    box.textContent=msg; box.style.marginTop='12px'; box.style.fontWeight='700'; box.style.color=ok?'#16a34a':'#dc2626';
+    box.textContent=msg;
+    // the site CSS hides .form-status by default (display:none) and only reveals it
+    // via the .form-status-success / .form-status-error modifier classes, so those
+    // MUST be set or the message is written into the DOM but never actually visible.
+    box.className='form-status '+(ok?'form-status-success':'form-status-error');
+    box.style.marginTop='12px';
   }
   function wire(form){
     // honeypot
