@@ -32,6 +32,9 @@ async function sendEmail({ apiKey, from, to, subject, text }) {
       },
       body: JSON.stringify({ from, to: [to], subject, text }),
     });
+    if (!r.ok) {
+      console.error('sendEmail non-ok response', r.status, await r.text());
+    }
     return r.ok;
   } catch (err) {
     console.error('sendEmail failed', err);
@@ -117,9 +120,12 @@ module.exports = async function handler(req, res) {
     `Preferred time: ${record.preferred_time || '-'}`,
   ].join('\n');
 
+  let ownerSent = null;
+  let customerSent = null;
+
   if (RESEND_KEY) {
     // Notify the owner
-    await sendEmail({
+    ownerSent = await sendEmail({
       apiKey: RESEND_KEY,
       from: FROM_EMAIL,
       to: OWNER_EMAIL,
@@ -136,6 +142,7 @@ module.exports = async function handler(req, res) {
         subject: 'We got your service request — R3M Appliance Repair',
         text: `Hi ${record.name},\n\nThanks for reaching out to R3M Appliance Repair. We received your request for your ${record.appliance.toLowerCase()} and will contact you shortly at ${record.phone} to confirm a time.\n\nWhat you sent us:\nAppliance: ${record.appliance}${record.brand ? ' (' + record.brand + ')' : ''}\nIssue: ${record.issue}\nAddress: ${record.street_address}, ${record.city}, ${record.state} ${record.zip_code}\n${record.preferred_date ? 'Preferred date: ' + record.preferred_date + '\n' : ''}\nNeed to reach us sooner? Call or text (469) 446-4242.\n\n— R3M Appliance Repair`,
       });
+      customerSent = confirmed;
 
       if (confirmed && insertedId && SUPABASE_URL && SERVICE_KEY) {
         try {
@@ -155,5 +162,5 @@ module.exports = async function handler(req, res) {
     }
   }
 
-  return res.status(200).json({ ok: true });
+  return res.status(200).json({ ok: true, debug: { ownerSent, customerSent } });
 }
