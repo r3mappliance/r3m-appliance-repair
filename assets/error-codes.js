@@ -1,0 +1,4 @@
+(function(){var q=document.getElementById('ec-search');if(!q)return;var cards=[].slice.call(document.querySelectorAll('.ec-card'));var groups=[].slice.call(document.querySelectorAll('.ec-brand'));var empty=document.getElementById('ec-empty');
+function run(){var t=q.value.trim().toLowerCase().replace(/\s+/g,' ');var words=t?t.split(' '):[];var n=0;cards.forEach(function(c){var s=c.getAttribute('data-terms');var ok=words.every(function(w){return s.indexOf(w)>-1});c.style.display=ok?'':'none';if(ok)n++;});
+groups.forEach(function(g){var any=[].slice.call(g.querySelectorAll('.ec-card')).some(function(c){return c.style.display!=='none'});g.style.display=any?'':'none';});empty.style.display=n?'none':'';}
+q.addEventListener('input',run);var p=new URLSearchParams(location.search).get('q');if(p){q.value=p;run();}})();
