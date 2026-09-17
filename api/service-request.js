@@ -101,6 +101,13 @@ module.exports = async function handler(req, res) {
 
   for (const field of REQUIRED_FIELDS) {
     if (!body[field] || String(body[field]).trim() === '') {
+      // Log which field was missing and what keys the request actually had,
+      // so a real customer's failed submission can be diagnosed from Vercel
+      // logs instead of only showing up as an unexplained 400.
+      console.error('service-request validation failed: missing field', field, {
+        receivedKeys: Object.keys(body),
+        userAgent: req.headers['user-agent'] || null,
+      });
       return res.status(400).json({ ok: false, error: `missing_${field}` });
     }
   }
